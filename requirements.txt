@@ -1,3 +1,0 @@
-# Core deps for the YouTube -> Zip dataset pipeline
-numpy>=1.26.0
-opencv-python>=4.9.0
