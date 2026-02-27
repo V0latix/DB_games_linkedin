@@ -40,7 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--head-seconds",
         type=float,
-        default=30.0,
+        default=5.0,
         help="Only evaluate frames from the first N seconds of each video",
     )
     parser.add_argument("--force", action="store_true")

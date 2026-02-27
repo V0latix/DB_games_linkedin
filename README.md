@@ -1,51 +1,78 @@
 # DB_games_linkedin
 
-Base finale des puzzles Zip extraits depuis des vidéos YouTube LinkedIn Games, avec les scripts pour régénérer la base.
+Standalone Zip dataset repository built from YouTube video frames (no LinkedIn scraping).
 
-## Contenu
+## Final datasets
 
-- `data/zip_unique.json`: dataset final au format exact du site (`game`, `version`, `puzzles`).
-- `scripts/`: pipeline complet YouTube -> frames -> grilles -> JSON site format.
-- `requirements.txt`: dépendances Python minimales pour la partie vision.
+- `data/zip_unique.json`: site-compatible base (`game`, `version`, `puzzles`).
+- `data/zip.json`: same structure as `zip_unique`, plus puzzle naming:
+  - `name`: `Zip #XXX - YYYY-MM-DD`
+- `data/zip_solution.json`: same as `zip.json`, plus:
+  - `solution`: solved path (if found)
+  - `solution_solver`: solver chosen for the canonical solution
+  - `solver_runs`: per-solver status + metrics
+- `data/zip_bundle.zip`: archive containing `data/zip.json`
+- `data/zip_solution_bundle.zip`: archive containing `data/zip_solution.json`
 
-## Pipeline
+## Repository structure
 
-Ordre des scripts:
+- `scripts/00_setup_check.py` to `scripts/07_export_site_zip_format.py`: YouTube -> frames -> grids -> extracted puzzle JSON pipeline.
+- `scripts/08_build_zip_bases.py`: builds `zip.json` and `zip_solution.json`.
+- `src/linkedin_game_solver/...`: local Zip solver subset used by script `08`.
+- `requirements.txt`: Python dependencies for CV extraction pipeline.
 
-1. `scripts/00_setup_check.py`
-2. `scripts/01_download_playlist.sh`
-3. `scripts/02_extract_frames.py`
-4. `scripts/03_pick_best_frames.py`
-5. `scripts/04_crop_deskew_grid.py`
-6. `scripts/05_export_archive.py`
-7. `scripts/06_grids_to_zip_puzzles.py`
-8. `scripts/07_export_site_zip_format.py`
-
-## Re-générer la base finale
+## Setup (macOS/Linux)
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
 
-python scripts/00_setup_check.py
+Install external tools:
+
+```bash
+brew install yt-dlp ffmpeg
+```
+
+## Full extraction pipeline (from YouTube playlist)
+
+```bash
+python3 scripts/00_setup_check.py
 export PLAYLIST_URL="https://www.youtube.com/playlist?list=..."
 
 bash scripts/01_download_playlist.sh --playlist-url "$PLAYLIST_URL"
-python scripts/02_extract_frames.py --playlist-url "$PLAYLIST_URL" --fps 0.5
-python scripts/03_pick_best_frames.py --head-seconds 5
-python scripts/04_crop_deskew_grid.py
-python scripts/05_export_archive.py
-python scripts/06_grids_to_zip_puzzles.py
-python scripts/07_export_site_zip_format.py
+python3 scripts/02_extract_frames.py --playlist-url "$PLAYLIST_URL" --fps 0.5
+python3 scripts/03_pick_best_frames.py --head-seconds 5
+python3 scripts/04_crop_deskew_grid.py
+python3 scripts/05_export_archive.py
+python3 scripts/06_grids_to_zip_puzzles.py
+python3 scripts/07_export_site_zip_format.py --include-needs-review
 ```
 
-Sortie finale site format:
+## Build `zip` and `zip_solution`
 
-- `zip_archive/metadata/zip_site_format.json`
-- `zip_archive/metadata/zip_site_format_bundle.zip`
+If you already have `zip_archive/metadata/index.json` and `zip_archive/metadata/puzzles_zip_manifest.json` in the current workspace:
+
+```bash
+python3 scripts/08_build_zip_bases.py
+```
+
+If metadata is in another workspace, pass absolute paths:
+
+```bash
+python3 scripts/08_build_zip_bases.py \
+  --index-json /absolute/path/to/zip_archive/metadata/index.json \
+  --manifest-json /absolute/path/to/zip_archive/metadata/puzzles_zip_manifest.json
+```
+
+Optional tuning:
+
+- `--time-limit-s 1.5` per solver per puzzle.
+- `--solvers articulation,forced,heuristic,heuristic_nolcv,baseline`
+- `--limit N` for a fast test run.
 
 ## Notes
 
-- Source: extraction vidéo YouTube (pas de scraping LinkedIn).
-- Les puzzles issus de vision sont fournis avec un statut qualité (`ok` / `needs_review`) dans les manifests intermédiaires.
+- Intended usage: personal research / solver work.
+- Do not republish extracted frames or complete puzzle images.
