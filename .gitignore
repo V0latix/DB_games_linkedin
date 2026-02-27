@@ -1,0 +1,8 @@
+# Ignore everything by default
+*
+
+# Keep repository essentials
+!.gitignore
+!README.md
+!data/
+!data/zip_unique.json
